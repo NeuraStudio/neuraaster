@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -37,11 +37,24 @@ jobs:
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
           echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
 
-      - name: Generate Gradle Wrapper
-        working-directory: android
+      - name: Generate Gradle 9.1 Wrapper
         run: |
+          rm -rf /tmp/neuraaster-wrapper
+          mkdir -p /tmp/neuraaster-wrapper
+
+          printf '' > /tmp/neuraaster-wrapper/settings.gradle
+          printf '' > /tmp/neuraaster-wrapper/build.gradle
+
+          cd /tmp/neuraaster-wrapper
           gradle wrapper --gradle-version 9.1.0
-          chmod +x gradlew
+
+          cp gradlew "$GITHUB_WORKSPACE/android/gradlew"
+          cp gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
+
+          rm -rf "$GITHUB_WORKSPACE/android/gradle"
+          cp -R gradle "$GITHUB_WORKSPACE/android/gradle"
+
+          chmod +x "$GITHUB_WORKSPACE/android/gradlew"
 
       - name: Flutter Pub Get
         run: flutter pub get
