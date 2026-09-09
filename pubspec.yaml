@@ -1,0 +1,35 @@
+name: neuraaster
+description: NeuraAster — an AMOLED AI assistant for Android.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  dio: ^5.11.1
+  camera: ^0.12.1
+  speech_to_text: ^7.4.0
+  audioplayers: ^6.8.1
+  cached_network_image: ^4.0.0
+  flutter_markdown_plus: ^1.0.12
+  video_player: ^2.14.0
+  chewie: ^1.16.2
+  path_provider: ^2.1.6
+  permission_handler: ^13.0.2
+  image_gallery_saver_plus: ^5.1.1
+  gallery_saver_plus: ^3.2.9
+  shared_preferences: ^2.5.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/neuraaster_logo.png
