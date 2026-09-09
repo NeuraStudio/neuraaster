@@ -1,31 +1,57 @@
-name: NeuraAster APK
+name: NeuraAster Android APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
+          cache: true
 
-      - run: flutter pub get
+      - name: Flutter version
+        run: flutter --version
 
-      - run: flutter build apk --release
+      - name: Create local.properties
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
 
-      - uses: actions/upload-artifact@v4
+      - name: Generate Gradle Wrapper
+        working-directory: android
+        run: |
+          gradle wrapper --gradle-version 9.1.0
+          chmod +x gradlew
+
+      - name: Flutter Pub Get
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: NeuraAster-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
