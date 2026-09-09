@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/chat_message.dart';
 import '../providers/app_providers.dart';
+import '../services/file_service.dart';
 import '../theme/app_theme.dart';
 import 'markdown_message.dart';
 import 'media_widgets.dart';

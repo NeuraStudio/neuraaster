@@ -111,7 +111,7 @@ class _GeneratedVideoState extends State<GeneratedVideo> {
         ),
       );
       if (!mounted) {
-        await chewie.dispose();
+        chewie.dispose();
         await video.dispose();
         return;
       }
