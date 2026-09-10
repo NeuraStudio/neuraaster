@@ -2,93 +2,72 @@ name: NeuraAster Android APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Java 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          channel: 'stable'
           cache: true
-
-      - name: Flutter version
-        run: flutter --version
 
       - name: Create local.properties
         run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
 
-      - name: Generate Gradle 9.1 Wrapper
-        run: |
-          rm -rf /tmp/neuraaster-wrapper
-          mkdir -p /tmp/neuraaster-wrapper
-          printf '' > /tmp/neuraaster-wrapper/settings.gradle
-          printf '' > /tmp/neuraaster-wrapper/build.gradle
-          cd /tmp/neuraaster-wrapper
-          gradle wrapper --gradle-version 9.1.0
-          cp gradlew "$GITHUB_WORKSPACE/android/gradlew"
-          cp gradlew.bat "$GITHUB_WORKSPACE/android/gradlew.bat"
-          rm -rf "$GITHUB_WORKSPACE/android/gradle"
-          cp -R gradle "$GITHUB_WORKSPACE/android/gradle"
-          chmod +x "$GITHUB_WORKSPACE/android/gradlew"
-
-      - name: Flutter Pub Get
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Fix gallery_saver_plus for AGP 9
+      - name: Patch plugins for modern AGP
         run: |
-          python3 - <<'EOF'
+          python3 - <<'PY'
           import glob, os, re
-          for d in glob.glob(os.path.expanduser('~/.pub-cache/hosted/pub.dev/gallery_saver_plus*')):
-              g = os.path.join(d, 'android', 'build.gradle')
-              if os.path.exists(g):
-                  with open(g, 'r', encoding='utf-8') as f:
-                      t = f.read()
-                  # Remove kotlin plugin
-                  t = re.sub(r"apply plugin:.*kotlin.*", "// removed for AGP 9", t)
-                  # Remove kotlinOptions block completely
-                  t = re.sub(r"kotlinOptions\s*\{[^}]*\}", "// removed kotlinOptions", t)
-                  # Ensure compileSdk is set
-                  if 'compileSdk' not in t:
-                      t = t.replace('android {', 'android {\n    compileSdk 34')
+          
+          # Fix gallery_saver_plus and similar plugins
+          for g in glob.glob(os.path.expanduser('~/.pub-cache/hosted/pub.dev/*/android/build.gradle')):
+              with open(g, 'r', encoding='utf-8', errors='ignore') as f:
+                  txt = f.read()
+              
+              orig = txt
+              # Remove deprecated kotlin-android plugin application
+              txt = re.sub(r"apply plugin:\s*['\"](kotlin-android|org\.jetbrains\.kotlin\.android)['\"]", "// removed", txt)
+              # Remove incompatible kotlinOptions
+              txt = re.sub(r"kotlinOptions\s*\{[^}]*\}", "// removed kotlinOptions", txt)
+              # Ensure compileSdk is defined
+              if "compileSdk" not in txt and "android {" in txt:
+                  txt = txt.replace("android {", "android {\n    compileSdk 34")
+              
+              if orig != txt:
                   with open(g, 'w', encoding='utf-8') as f:
-                      f.write(t)
-                  print('Patched successfully:', g)
-          EOF
-      - name: Flutter Clean
-        run: echo "Skipped flutter clean to preserve .dart_tool"
+                      f.write(txt)
+                  print(f"Patched: {g}")
+          PY
 
-      - name: Direct Gradle Build
-        working-directory: android
-        run: ./gradlew app:assembleRelease --stacktrace --info
+      - name: Build Android APK
+        run: flutter build apk --release
 
       - name: Verify APK
         run: |
-          find build -type f -name "*.apk" -print
-          test -f build/app/outputs/apk/release/app-release.apk
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: NeuraAster-APK
-          path: build/app/outputs/apk/release/app-release.apk
-          if-no-files-found: error
+          name: NeuraAster-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
