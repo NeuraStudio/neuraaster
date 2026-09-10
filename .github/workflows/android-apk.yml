@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Patch plugins for modern AGP and compileSdk 34
+      - name: Patch plugins for modern AGP and compileSdk 36
         run: |
           python3 - <<'PY'
           import glob, os, re
@@ -48,9 +48,9 @@ jobs:
                   if "apply plugin:" in line and "kotlin" in line:
                       new_lines.append("// removed kotlin plugin\n")
                   elif "compileSdkVersion" in line:
-                      new_lines.append("    compileSdkVersion 34\n")
+                      new_lines.append("    compileSdkVersion 36\n")
                   elif "compileSdk " in line and "compileSdkVersion" not in line:
-                      new_lines.append("    compileSdk 34\n")
+                      new_lines.append("    compileSdk 36\n")
                   else:
                       new_lines.append(line)
 
