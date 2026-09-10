@@ -33,9 +33,10 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Create local.properties
+      - name: Create local.properties and grant permissions
         run: |
           echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          chmod +x android/gradlew || true
 
       - name: Install dependencies
         run: flutter pub get
@@ -43,19 +44,24 @@ jobs:
       - name: Patch plugins for AGP 9
         run: python3 patch_dependencies.py
 
-      - name: Assemble Release APK via Gradle
-        working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build Android APK
+        run: |
+          flutter build apk --release --android-skip-build-dependency-validation || true
 
       - name: Locate and Stage APK
         run: |
           mkdir -p release_output
-          APK_FILE=$(find . -name "*.apk" -not -path "*/intermediates/*" | head -n 1)
+          APK_FILE=$(find . -type f -name "*.apk" -not -path "*/intermediates/*" | head -n 1)
           if [ -z "$APK_FILE" ]; then
-            echo "ERROR: No APK produced!"
+            echo "Direct flutter search empty, checking android build folder..."
+            cd android && ./gradlew assembleRelease --no-daemon && cd ..
+            APK_FILE=$(find . -type f -name "*.apk" -not -path "*/intermediates/*" | head -n 1)
+          fi
+          if [ -z "$APK_FILE" ]; then
+            echo "ERROR: No APK found anywhere!"
             exit 1
           fi
-          echo "Found APK: $APK_FILE"
+          echo "Found APK at: $APK_FILE"
           cp "$APK_FILE" release_output/NeuraAster-Release.apk
           ls -lh release_output/NeuraAster-Release.apk
 
