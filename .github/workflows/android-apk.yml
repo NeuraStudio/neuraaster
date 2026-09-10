@@ -54,29 +54,22 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
-      - name: Fix gallery_saver_plus compileSdk
-        shell: bash
+      - name: Fix gallery_saver_plus for AGP 9
         run: |
-          set -e
-
-          GALLERY_GRADLE=$(find "$HOME/.pub-cache" \
-            -path "*/gallery_saver_plus-*/android/build.gradle" \
-            -type f | head -n 1)
-
-          if [ -z "$GALLERY_GRADLE" ]; then
-            echo "ERROR: gallery_saver_plus Android build.gradle not found"
-            exit 1
-          fi
-
-          echo "Found: $GALLERY_GRADLE"
-
-          sed -i -E \
-            's/compileSdkVersion[[:space:]]+[0-9]+/compileSdkVersion 37/g;
-             s/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 37/g' \
-            "$GALLERY_GRADLE"
-
-          cat "$GALLERY_GRADLE"
-
+          python3 - <<'EOF'
+          import glob, os, re
+          for d in glob.glob(os.path.expanduser('~/.pub-cache/hosted/pub.dev/gallery_saver_plus*')):
+              g = os.path.join(d, 'android', 'build.gradle')
+              if os.path.exists(g):
+                  with open(g, 'r') as f:
+                      t = f.read()
+                  t = re.sub(r"apply plugin:.*kotlin.*", "// removed for AGP 9", t)
+                  if 'compileSdk' not in t:
+                      t = t.replace('android {', 'android {\n    compileSdk 34')
+                  with open(g, 'w') as f:
+                      f.write(t)
+                  print('Patched', g)
+          EOF
       - name: Flutter Clean
         run: echo "Skipped flutter clean to preserve .dart_tool"
 
