@@ -1,6 +1,5 @@
 import glob, os, re
 
-# Fix gradle files for AGP and compileSdk 34
 for g in glob.glob(os.path.expanduser('~/.pub-cache/hosted/pub.dev/*/android/build.gradle')):
     with open(g, 'r', encoding='utf-8', errors='ignore') as f:
         lines = f.readlines()
@@ -10,9 +9,9 @@ for g in glob.glob(os.path.expanduser('~/.pub-cache/hosted/pub.dev/*/android/bui
         if "apply plugin:" in line and "kotlin" in line:
             new_lines.append("// removed kotlin plugin\n")
         elif "compileSdkVersion" in line:
-            new_lines.append("    compileSdkVersion 34\n")
+            new_lines.append("    compileSdkVersion 36\n")
         elif "compileSdk " in line and "compileSdkVersion" not in line:
-            new_lines.append("    compileSdk 34\n")
+            new_lines.append("    compileSdk 36\n")
         else:
             new_lines.append(line)
 
