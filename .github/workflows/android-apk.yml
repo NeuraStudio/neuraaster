@@ -78,7 +78,7 @@ jobs:
           cat "$GALLERY_GRADLE"
 
       - name: Flutter Clean
-        run: flutter clean
+        run: echo "Skipped flutter clean to preserve .dart_tool"
 
       - name: Direct Gradle Build
         working-directory: android
